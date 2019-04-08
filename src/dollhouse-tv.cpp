@@ -20,8 +20,7 @@
 #include <SSD1306Wire.h>
 
 // init time client
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
+NTPClient timeClient("europe.pool.ntp.org", 3600, 60000);
 
 // declaring method prototypes
 void drawWelcome(OLEDDisplay* display);
@@ -29,7 +28,6 @@ void drawCat(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t
 void drawStars(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawClock(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawWeather(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawJaMa(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void drawDino(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
 void loopHandler();
 void setupHandler();
@@ -98,7 +96,6 @@ void setup()
     displayNode.addFrame(drawCat);
     displayNode.addFrame(drawStars);
     displayNode.addFrame(drawClock);
-    displayNode.addFrame(drawJaMa);
     displayNode.addFrame(drawWeather);
     //displayNode.enableStatusFrame(true);
 
@@ -191,21 +188,21 @@ void drawClock(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16
     }
 
     // display second hand
-    float angle = timeClient.getSeconds() * 6;
+    float angle = (timeClient.getRawTime() % 60) * 6;
     angle = (angle / 57.29577951); //Convert degrees to radians
     int x3 = (clockCenterX + (sin(angle) * (clockRadius - (clockRadius / 5))));
     int y3 = (clockCenterY - (cos(angle) * (clockRadius - (clockRadius / 5))));
     display->drawLine(clockCenterX + x, clockCenterY + y, x3 + x, y3 + y);
     //
     // display minute hand
-    angle = timeClient.getMinutes() * 6;
+    angle = (timeClient.getRawTime() % 3600) / 60 * 6;
     angle = (angle / 57.29577951); //Convert degrees to radians
     x3 = (clockCenterX + (sin(angle) * (clockRadius - (clockRadius / 4))));
     y3 = (clockCenterY - (cos(angle) * (clockRadius - (clockRadius / 4))));
     display->drawLine(clockCenterX + x, clockCenterY + y, x3 + x, y3 + y);
     //
     // display hour hand
-    angle = timeClient.getHours() * 30 + int((timeClient.getMinutes() / 12) * 6);
+    angle = (timeClient.getRawTime() % 86400L) / 3600 * 30 + int((timeClient.getRawTime() % 3600) / 60 / 12) * 6;
     angle = (angle / 57.29577951); //Convert degrees to radians
     x3 = (clockCenterX + (sin(angle) * (clockRadius - (clockRadius / 2))));
     y3 = (clockCenterY - (cos(angle) * (clockRadius - (clockRadius / 2))));
@@ -227,17 +224,6 @@ void drawWeather(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int
     String weatherIcon = wundergroundNode.getWUClient()->getTodayIcon();
     int weatherIconWidth = display->getStringWidth(weatherIcon);
     display->drawString(30 + x - weatherIconWidth / 2, 05 + y, weatherIcon);
-}
-
-void drawJaMa(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y)
-{
-    display->setColor(WHITE);
-    display->drawXbm(x + moveX, y + moveY, jama_width, jama_height, jama_bits);
-    if (state->frameState == FIXED && millis() >= move) {
-        moveX = random(-5, 5);
-        moveY = random(-5, 5);
-        move = millis() + 1000UL;
-    }
 }
 
 void drawDino(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y)
