@@ -1,11 +1,11 @@
-version: 2
+version: 2.1
+
+orbs:
+  python: circleci/python@0.2.1
+
 jobs:
   build:
-    docker:
-      - image: circleci/python:3.9.1
-      
-    working_directory: ~/repo
-
+    executor: python/default
     steps:
       - checkout
 
@@ -22,4 +22,8 @@ jobs:
             platformio ci --project-conf platformio.ini
           environment:
             PLATFORMIO_CI_SRC: src
-     
+
+workflows:
+  main:
+    jobs:
+      - build
