@@ -13,7 +13,7 @@
 #include "ButtonNode.hpp"
 #include "DisplayNode.hpp"
 #include "WeatherStationFonts.h"
-#include "WundergroundNode.h"
+#include "WeatherStationNode.h"
 #include "images.h"
 #include <Homie.h>
 #include <OLEDDisplayUi.h>
@@ -23,12 +23,13 @@
 NTPClient timeClient("europe.pool.ntp.org", 3600, 60000);
 
 // declaring method prototypes
-void drawWelcome(OLEDDisplay* display);
-void drawCat(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawStars(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawClock(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawWeather(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
-void drawDino(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawWelcome(OLEDDisplay *display);
+void drawCat(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y);
+void drawStars(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y);
+void drawClock(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y);
+void drawWeather(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y);
+void drawDino(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y);
+void drawPictures(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y);
 void loopHandler();
 void setupHandler();
 
@@ -38,7 +39,7 @@ OLEDDisplayUi ui(&display);
 
 // init nodes
 DisplayNode displayNode("display", display, ui, timeClient);
-WundergroundNode wundergroundNode("wunderground");
+WeatherStationNode weatherStationNode("weather");
 ButtonNode buttonNode("button", D4, []() {
     displayNode.toggleTransitionMode();
 });
@@ -54,7 +55,8 @@ uint8_t dinoState = 0;
 int8_t dinoPosX = -64;
 
 // stars
-struct starType {
+struct starType
+{
     uint8_t state;
     int8_t posX;
     int8_t posY;
@@ -62,20 +64,18 @@ struct starType {
 uint8_t maxStars = 24;
 uint8_t starsSize[6];
 const uint8_t starsStep = 2;
-starType* starStruct;
-
-// jama
-int8_t moveX = 0;
-int8_t moveY = 0;
-ulong move;
+starType *starStruct;
 
 // clock
 int clockCenterX = 64;
 int clockCenterY = 24;
 int clockRadius = 23;
 
-void setup()
-{
+// pictures
+byte page = 0;
+ulong pageTime = 0;
+
+void setup() {
     Serial.begin(115200);
     Serial << endl
            << endl;
@@ -94,21 +94,20 @@ void setup()
     // init display
     displayNode.addFrame(drawDino);
     displayNode.addFrame(drawCat);
-    displayNode.addFrame(drawStars);
-    displayNode.addFrame(drawClock);
     displayNode.addFrame(drawWeather);
+    displayNode.addFrame(drawStars);
+    displayNode.addFrame(drawPictures);
+    displayNode.addFrame(drawClock);
     //displayNode.enableStatusFrame(true);
 
     Homie.setup();
 }
 
-void loop()
-{
+void loop() {
     Homie.loop();
 }
 
-void drawWelcome(OLEDDisplay* display)
-{
+void drawWelcome(OLEDDisplay *display) {
     display->init();
     display->clear();
     display->flipScreenVertically();
@@ -127,8 +126,7 @@ void drawWelcome(OLEDDisplay* display)
     delay(8000);
 }
 
-void drawCat(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y)
-{
+void drawCat(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y) {
     // draw cat
     display->setColor(WHITE);
     display->drawXbm(x + catPosX, y + catPosY[catState], 64, 40, picsPointers[catState]);
@@ -147,8 +145,7 @@ void drawCat(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t
     }
 }
 
-void drawStars(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y)
-{
+void drawStars(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y) {
     if (state->frameState == FIXED) {
         // draw stars
         display->setColor(WHITE);
@@ -169,8 +166,7 @@ void drawStars(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16
 }
 
 // from SSD1306ClockDemo.ino
-void drawClock(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y)
-{
+void drawClock(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y) {
     // Draw the clock face
     display->setColor(WHITE);
     display->drawCircle(clockCenterX + x, clockCenterY + y, 2);
@@ -209,25 +205,24 @@ void drawClock(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16
     display->drawLine(clockCenterX + x, clockCenterY + y, x3 + x, y3 + y);
 }
 
-void drawWeather(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y)
+void drawWeather(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y)
 {
     display->setColor(WHITE);
     display->setFont(ArialMT_Plain_10);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
-    display->drawString(58 + x, 5 + y, wundergroundNode.getWUClient()->getWeatherText());
+    display->drawString(58 + x, 5 + y, weatherStationNode.getCurrentWeather().description);
 
     display->setFont(ArialMT_Plain_24);
-    String temp = wundergroundNode.getWUClient()->getCurrentTemp() + "°C";
+    String temp = String(weatherStationNode.getCurrentWeather().temp, 1) + "°C";
     display->drawString(58 + x, 15 + y, temp);
 
     display->setFont(Meteocons_Plain_42);
-    String weatherIcon = wundergroundNode.getWUClient()->getTodayIcon();
+    String weatherIcon = weatherStationNode.getCurrentWeather().iconMeteoCon;
     int weatherIconWidth = display->getStringWidth(weatherIcon);
     display->drawString(30 + x - weatherIconWidth / 2, 05 + y, weatherIcon);
 }
 
-void drawDino(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y)
-{
+void drawDino(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y) {
     display->setColor(WHITE);
     display->drawXbm(x + dinoPosX, y, dino_width, dino_height, dinoPointers[dinoState]);
 
@@ -241,9 +236,24 @@ void drawDino(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_
     }
 }
 
-void setupHandler()
-{
-    Homie.getLogger() << "Setup handler" << endl;
+// draw some XBM bitmaps
+void drawPictures(OLEDDisplay *display, OLEDDisplayUiState *state, int16_t x, int16_t y) {
+    display->setColor(WHITE);
+    if (page == 0) {
+        display->drawXbm(x + 5, y + 7, picture2_width, picture2_height, picture2_bits);
+        display->drawXbm(x + 70, y + 5, picture3_width, picture3_height, picture3_bits);
+    } else {
+        display->drawXbm(x, y + 2, picture1_width, picture1_height, picture1_bits);
+    }
+    if (millis() - pageTime > 2000) {
+        page = 1 - page;
+        pageTime = millis();
+    }
+    
+}
+
+void setupHandler() {
+    Homie.getLogger() << "setupHandler" << endl;
 
     // init cat
     for (count = 0; count < 5; count++) {
@@ -258,19 +268,18 @@ void setupHandler()
     starsSize[4] = 5;
     starsSize[5] = 3;
     while ((maxStars > 0) && (starStruct == NULL)) {
-        if ((starStruct = (starType*)malloc(sizeof(starType) * maxStars)) == NULL)
+        if ((starStruct = (starType *)malloc(sizeof(starType) * maxStars)) == NULL)
             --maxStars;
     }
     for (count = 0; count < maxStars; count++) {
-        starStruct[count] = { uint8_t(random(0, 6)), int8_t(random(0, 128)), int8_t(random(0, 60)) };
+        starStruct[count] = {uint8_t(random(0, 6)), int8_t(random(0, 128)), int8_t(random(0, 60))};
     }
 
-    move = millis();
+    pageTime = millis();
     timeClient.begin();
-    wundergroundNode.setupHandler();
+    weatherStationNode.setupHandler();
 }
 
-void loopHandler()
-{
+void loopHandler() {
     timeClient.update();
 }

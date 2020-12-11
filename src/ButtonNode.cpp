@@ -11,7 +11,7 @@
 ButtonNode::ButtonNode(const char* name,
     const int buttonPin,
     TButtonCallback buttonCallback)
-    : HomieNode(name, "ButtonNode")
+    : HomieNode(name, "ButtonNode", "Button")
 {
     _buttonPin = buttonPin;
     _buttonCallback = buttonCallback;

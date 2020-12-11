@@ -18,7 +18,7 @@ HomieEvent homieEvent;
 HomieSetting<bool> flipScreenSetting("flipScreen", "Flip the display vertically");
 
 DisplayNode::DisplayNode(const char* name, SSD1306Wire& display, OLEDDisplayUi& ui, NTPClient& timeClient)
-    : HomieNode(name, "OLEDDisplay")
+    : HomieNode(name, "OLEDDisplay", "Display")
     , display(display)
     , ui(ui)
     , timeClient(timeClient)

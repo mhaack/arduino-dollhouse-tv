@@ -1,5 +1,5 @@
 /*
-* WundergroundNode.h
+* WeatherStationNode.h
 * Homie node that fetches data from weather underground using ESP8266 Weather Station library.
 *
 * Version: 1.0
@@ -9,12 +9,12 @@
 #pragma once
 
 #include <HomieNode.hpp>
-#include <WundergroundClient.h>
+#include <OpenWeatherMapCurrent.h>
 
-class WundergroundNode : public HomieNode {
+class WeatherStationNode : public HomieNode {
 private:
     const boolean IS_METRIC = true;
-    WundergroundClient* _wunderground;
+    OpenWeatherMapCurrentData _currentWeather;
     unsigned long _nextUpdate;
 
     bool isConfigured();
@@ -23,7 +23,7 @@ protected:
     virtual void loop() override;
 
 public:
-    WundergroundNode(const char* name);
-    WundergroundClient* getWUClient() const { return _wunderground; }
+    WeatherStationNode(const char* name);
+    OpenWeatherMapCurrentData getCurrentWeather() const { return _currentWeather; }
     void setupHandler();
 };
