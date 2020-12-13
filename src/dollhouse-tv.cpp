@@ -3,12 +3,12 @@
  *
  * Mini dollhouse TV 
  *
- * Version: 1.0.0
+ * Version: 2.0.0
  * Author: Markus Haack (http://github.com/mhaack)
  */
 
 #define FW_NAME "mini-tv"
-#define FW_VERSION "1.0.0"
+#define FW_VERSION "2.0.0"
 
 #include "ButtonNode.hpp"
 #include "DisplayNode.hpp"

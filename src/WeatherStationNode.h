@@ -1,8 +1,9 @@
 /*
 * WeatherStationNode.h
-* Homie node that fetches data from weather underground using ESP8266 Weather Station library.
+* Homie node that fetches data from OpenWeatherMap service
+* using ESP8266 Weather Station library.
 *
-* Version: 1.0
+* Version: 2.0
 * Author: Markus Haack (http://github.com/mhaack)
 */
 
